@@ -1,0 +1,12 @@
+--- GJ AI Takeaway Plugin Diagnostic ---
+Database Table (wp_gj_ai_logs): [OK]
+Settings Found: [OK]
+- Guest Limit: 3
+- User Limit: 100
+- Article Meta Mappings: 0
+- User Meta Mappings: 0
+Context Gathering (Post 1): [OK]
+- Title: Hello world!
+- Meta Fields Found: 0
+Rate Limiting Simulation: [OK]
+Tag Replacement (Basic): [OK]
