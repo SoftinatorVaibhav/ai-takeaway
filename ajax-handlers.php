@@ -48,6 +48,7 @@ function gj_ai_gather_post_context( $post_id ) {
 
     // Meta Fields & Dynamic Mapping
     $meta_fields = array();
+    $attachments_binary = array();
     $meta_mappings = $settings['article_meta_mappings'] ?? array();
     
     foreach ( $meta_mappings as $m ) {
@@ -68,6 +69,25 @@ function gj_ai_gather_post_context( $post_id ) {
             $meta_fields[$label] = array(
                 'url' => $value
             );
+        } elseif ( $type === 'file_binary' ) {
+            // New: Handle Binary Attachment
+            $file_url = '';
+            if ( is_numeric($value) ) {
+                $file_url = wp_get_attachment_url($value);
+            } else {
+                $file_url = $value; // Assume URL
+            }
+
+            if ( $file_url ) {
+                $binary = gj_ai_get_file_binary($file_url);
+                if ( $binary ) {
+                    $attachments_binary[] = array(
+                        'label' => $label,
+                        'mime'  => wp_check_filetype($file_url)['type'] ?: 'application/octet-stream',
+                        'data'  => $binary
+                    );
+                }
+            }
         } else {
             $meta_fields[$label] = $value;
         }
@@ -87,23 +107,38 @@ function gj_ai_gather_post_context( $post_id ) {
         );
     }
 
+    // 4. Fetch Wasabi Manuscript (OCR) content if available
+    $ocr_content = '';
+    $file_id = get_post_meta( $post_id, 'file_id', true );
+    if ( $file_id && class_exists( 'WMA_S3_Helper' ) ) {
+        $md_content = WMA_S3_Helper::fetch_markdown_from_s3( $file_id, $post_id );
+        if ( ! is_wp_error( $md_content ) ) {
+            $ocr_content = $md_content;
+            $attachments_binary[] = array(
+                'label' => 'Manuscript (OCR)',
+                'mime'  => 'text/markdown',
+                'data'  => $md_content
+            );
+        }
+    }
+
     // Article Content
     $content = strip_tags( $post->post_content );
 
     return array(
-        'post_id' => $post_id,
-        'title'   => $post->post_title,
-        'author'  => $author_data,
-        'meta'    => $meta_fields,
-        'files'   => $files,
-        'content' => $content,
-        '_debug'  => array(
+        'post_id'     => $post_id,
+        'title'       => $post->post_title,
+        'author'      => $author_data,
+        'meta'        => $meta_fields,
+        'files'       => $files,
+        'content'     => $content,
+        'ocr_content' => $ocr_content, // Attached the OCR markdown version
+        'attachments_binary' => $attachments_binary, // New: Raw binary attachments
+        '_debug'      => array(
             'raw_meta' => get_post_custom( $post_id ),
             'raw_author_meta' => get_user_meta( $author_id ),
         )
     );
-
-
 }
 
 /**
@@ -125,6 +160,7 @@ function gj_ai_replace_tags( $text, $context ) {
         '{{author_email}}'      => $context['author']['email'] ?? '',
         '{{site_url}}'          => get_site_url(),
         '{{eternal_ground}}'    => get_post_meta($post_id, 'eternal_ground', true),
+        '{{ocr_content}}'       => $context['ocr_content'] ?? '',
     );
 
     // Replace basic tags
@@ -168,6 +204,26 @@ function gj_ai_get_ip() {
     if (!empty($_SERVER['HTTP_CLIENT_IP'])) return $_SERVER['HTTP_CLIENT_IP'];
     if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) return explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0];
     return $_SERVER['REMOTE_ADDR'];
+}
+
+/**
+ * Get File Binary Content from various sources
+ */
+function gj_ai_get_file_binary( $source ) {
+    if ( ! $source ) return null;
+
+    // 1. If it's a local file path
+    if ( file_exists( $source ) ) {
+        return file_get_contents( $source );
+    }
+
+    // 2. If it's a URL (remote or S3)
+    $response = wp_remote_get( $source, array( 'timeout' => 30 ) );
+    if ( ! is_wp_error( $response ) && wp_remote_retrieve_response_code( $response ) === 200 ) {
+        return wp_remote_retrieve_body( $response );
+    }
+
+    return null;
 }
 
 /**
@@ -218,24 +274,50 @@ function gj_ai_chat_handler() {
         // First message: Include Context
         $context = gj_ai_gather_post_context( $post_id );
         
+        // Separate binaries for multimodal sending
+        $binaries = $context['attachments_binary'] ?? array();
+        unset($context['attachments_binary']);
+        unset($context['_debug']); // Save tokens
+
         // Render Prompt
         $rendered_prompt = gj_ai_replace_tags( $system_prompt, $context );
 
-        $messages = array(
-            array( 'role' => 'system', 'content' => $rendered_prompt ),
-            array( 'role' => 'user', 'content' => "CONTEXT:\n" . wp_json_encode( $context ) . "\n\nQUESTION: " . $user_msg ),
-        );
+        $user_text = "CONTEXT DATA:\n" . wp_json_encode( $context ) . "\n\nQUESTION: " . $user_msg;
+        
+        if ( !empty($binaries) ) {
+            $content_parts = array(
+                array( 'type' => 'text', 'text' => $user_text )
+            );
+            foreach ( $binaries as $bin ) {
+                $content_parts[] = array(
+                    'type' => 'image_url', // Standard multimodal format
+                    'image_url' => array(
+                        'url' => 'data:' . $bin['mime'] . ';base64,' . base64_encode($bin['data'])
+                    )
+                );
+            }
+            $messages = array(
+                array( 'role' => 'system', 'content' => $rendered_prompt ),
+                array( 'role' => 'user', 'content' => $content_parts ),
+            );
+        } else {
+            $messages = array(
+                array( 'role' => 'system', 'content' => $rendered_prompt ),
+                array( 'role' => 'user', 'content' => $user_text ),
+            );
+        }
     } else {
-
         // Subsequent message: Just history + message
         $messages[] = array( 'role' => 'user', 'content' => $user_msg );
     }
 
-    // Strip debug info before sending to AI to save tokens
-    $ai_context = $context;
-    unset($ai_context['_debug']);
+    // Determine which model to use
+    $default_model = $settings['model'] ?? 'google/gemini-2.0-flash-001';
+    $model_to_use = $is_logged_in 
+        ? ($settings['model_login'] ?? $default_model) 
+        : ($settings['model_guest'] ?? $default_model);
 
-    $client = new GJ_AI_Client();
+    $client = new GJ_AI_Client( $model_to_use );
     $ai_response = $client->get_response( $messages );
 
     if ( strpos($ai_response, 'Error:') === 0 ) {
@@ -274,16 +356,45 @@ function gj_ai_test_context_handler() {
     
     if ( empty( $context ) ) wp_send_json_error( 'Post not found' );
 
-    $client = new GJ_AI_Client();
     $settings = get_option( 'gj_ai_takeaway_settings', array() );
+
+    // Determine which model to use
+    $is_logged_in = is_user_logged_in();
+    $default_model = $settings['model'] ?? 'google/gemini-2.0-flash-001';
+    $model_to_use = $is_logged_in 
+        ? ($settings['model_login'] ?? $default_model) 
+        : ($settings['model_guest'] ?? $default_model);
+
+    $client = new GJ_AI_Client( $model_to_use );
     $system_prompt = $settings['prompt'] ?? '';
 
     $rendered_prompt = gj_ai_replace_tags( $system_prompt, $context );
 
-    $messages = array(
-        array( 'role' => 'system', 'content' => $rendered_prompt ),
-        array( 'role' => 'user', 'content' => "CONTEXT DATA:\n" . wp_json_encode( $context ) . "\n\nTEST QUESTION: Hello, summarize this context." ),
-    );
+    $binaries = $context['attachments_binary'] ?? array();
+    unset($context['attachments_binary']);
+    
+    $user_text = "CONTEXT DATA:\n" . wp_json_encode( $context ) . "\n\nTEST QUESTION: Hello, summarize this context and any attached files.";
+
+    if ( !empty($binaries) ) {
+        $content_parts = array( array( 'type' => 'text', 'text' => $user_text ) );
+        foreach ( $binaries as $bin ) {
+            $content_parts[] = array(
+                'type' => 'image_url',
+                'image_url' => array(
+                    'url' => 'data:' . $bin['mime'] . ';base64,' . base64_encode($bin['data'])
+                )
+            );
+        }
+        $messages = array(
+            array( 'role' => 'system', 'content' => $rendered_prompt ),
+            array( 'role' => 'user', 'content' => $content_parts ),
+        );
+    } else {
+        $messages = array(
+            array( 'role' => 'system', 'content' => $rendered_prompt ),
+            array( 'role' => 'user', 'content' => $user_text ),
+        );
+    }
 
     $ai_response = $client->get_response( $messages );
 
@@ -329,7 +440,12 @@ function gj_ai_get_shortcode_preview_handler() {
     $post_id = intval( $_POST['post_id'] );
     if ( ! $post_id ) wp_send_json_error( 'Invalid Post ID' );
 
-    echo do_shortcode( '[ai_takeaway post_id="' . $post_id . '"]' );
+    header('Content-Type: text/html');
+    if (function_exists('gj_ai_takeaway_shortcode')) {
+        echo gj_ai_takeaway_shortcode( array( 'post_id' => $post_id ) );
+    } else {
+        echo "Error: Shortcode function not found.";
+    }
     wp_die();
 }
 

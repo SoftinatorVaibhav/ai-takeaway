@@ -50,9 +50,14 @@ function gj_ai_takeaway_activate() {
     if ( ! get_option( 'gj_ai_takeaway_settings' ) ) {
         update_option( 'gj_ai_takeaway_settings', array(
             'endpoint' => 'https://openrouter.ai/api/v1/chat/completions',
+            'api_key'  => '',
             'model'    => 'google/gemini-2.0-flash-001',
+            'model_login' => 'google/gemini-2.0-flash-001',
+            'model_guest' => 'google/gemini-2.0-flash-lite-001',
             'prompt'   => "You are a helpful assistant for the article: {{post_title}}. \n\nContext: {{post_content}}\n\nEternal Ground Info: {{eternal_ground}}\n\nHelp the user answer questions based on this information.",
             'log_retention' => 30,
+            'guest_limit' => 3,
+            'user_limit' => 100,
         ) );
     }
 

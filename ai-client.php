@@ -12,11 +12,16 @@ class GJ_AI_Client {
     private $api_key;
     private $model;
 
-    public function __construct() {
+    public function __construct( $model = null ) {
         $settings = get_option( 'gj_ai_takeaway_settings', array() );
         $this->endpoint = $settings['endpoint'] ?? 'https://openrouter.ai/api/v1/chat/completions';
         $this->api_key  = $settings['api_key'] ?? '';
-        $this->model    = $settings['model'] ?? 'google/gemini-2.0-flash-001';
+        
+        if ( $model ) {
+            $this->model = $model;
+        } else {
+            $this->model = $settings['model'] ?? 'google/gemini-2.0-flash-001';
+        }
     }
 
     public function get_response( $messages ) {

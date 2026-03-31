@@ -45,7 +45,6 @@ function gj_ai_takeaway_shortcode($atts) {
             border-radius: 12px;
             background: linear-gradient(#faf4fd, #f9f7fd) padding-box, linear-gradient(to right, #AB11D5, #4F31C8) border-box;
             padding: 24px 30px;
-            font-family: inherit;
             margin: 0px 0px 40px 0px;
             box-sizing: border-box;
             width: 100% ;
@@ -100,7 +99,7 @@ function gj_ai_takeaway_shortcode($atts) {
         }
         .gj-ai-msg-received {
             align-self: flex-start;
-            background-color: #ededed;
+            background-color: #52009508;
             color: #444;
             border-bottom-left-radius: 4px;
         }
@@ -133,7 +132,7 @@ function gj_ai_takeaway_shortcode($atts) {
             color: #a9a9a9;
         }
         .gj-ai-input-container button {
-            background: none;
+            background: none !important;
             border: none;
             cursor: pointer;
             padding: 0;
@@ -189,117 +188,126 @@ function gj_ai_takeaway_shortcode($atts) {
     </div>
 
     <script>
-    (function($) {
-        // Global-ish function to initialize or re-initialize a chatbot instance
-        window.gj_ai_init_chatbot = function(postId, chatSessionId, ajaxUrl) {
-            var $chatInput = $('#gj_ai_chat_input_' + postId);
-            var $chatSend = $('#gj_ai_chat_send_' + postId);
-            var $chatArea = $('#gj_ai_chat_area_' + postId);
+    // Define global function outside IIFE for reliability
+    window.gj_ai_init_chatbot = function(postId, chatSessionId, ajaxUrl) {
+        var $ = jQuery;
+        console.log('Initializing GJ AI Chatbot for Post ID:', postId);
+        
+        var $chatInput = $('#gj_ai_chat_input_' + postId);
+        var $chatSend = $('#gj_ai_chat_send_' + postId);
+        var $chatArea = $('#gj_ai_chat_area_' + postId);
 
-            function addMessage(text, side) {
-                var $msg = $('<div class="gj-ai-msg"></div>').addClass(side === 'user' ? 'gj-ai-msg-sent' : 'gj-ai-msg-received').text(text);
-                $chatArea.append($msg);
-                $chatArea.scrollTop($chatArea[0].scrollHeight);
-                return $msg;
-            }
+        if ($chatArea.length === 0) {
+            console.warn('GJ AI Chatbot Area not found for Post ID:', postId);
+            return;
+        }
 
-            function addLoading() {
-                var $loader = $('<div class="gj-ai-msg gj-ai-msg-received gj-ai-loading-dots"><span>.</span><span>.</span><span>.</span></div>');
-                $chatArea.append($loader);
-                $chatArea.scrollTop($chatArea[0].scrollHeight);
-                return $loader;
-            }
+        function addMessage(text, side) {
+            var $msg = $('<div class="gj-ai-msg"></div>').addClass(side === 'user' ? 'gj-ai-msg-sent' : 'gj-ai-msg-received').text(text);
+            $chatArea.append($msg);
+            $chatArea.scrollTop($chatArea[0].scrollHeight);
+            return $msg;
+        }
 
-            function sendMessage() {
-                var message = $chatInput.val().trim();
-                if (!message) return;
+        function addLoading() {
+            var $loader = $('<div class="gj-ai-msg gj-ai-msg-received gj-ai-loading-dots"><span>.</span><span>.</span><span>.</span></div>');
+            $chatArea.append($loader);
+            $chatArea.scrollTop($chatArea[0].scrollHeight);
+            return $loader;
+        }
 
-                addMessage(message, 'user');
-                $chatInput.val('');
-                var $loading = addLoading();
+        function sendMessage() {
+            var message = $chatInput.val().trim();
+            if (!message) return;
 
-                $chatInput.prop('disabled', true);
-                $chatSend.prop('disabled', true);
+            addMessage(message, 'user');
+            $chatInput.val('');
+            var $loading = addLoading();
 
-                $.post(ajaxUrl, {
-                    action: 'gj_ai_chat',
-                    post_id: postId,
-                    message: message,
-                    chat_session_id: chatSessionId
-                }, function(response) {
-                    $loading.remove();
-                    $chatInput.prop('disabled', false);
-                    $chatSend.prop('disabled', false);
-                    $chatInput.focus();
+            $chatInput.prop('disabled', true);
+            $chatSend.prop('disabled', true);
 
-                    if (response.success) {
-                        addMessage(response.data, 'bot');
-                    } else {
-                        var errorMsg = response.data && response.data.message ? response.data.message : 'Sorry, something went wrong.';
-                        addMessage(errorMsg, 'bot');
-                    }
-                }).fail(function() {
-                    $loading.remove();
-                    $chatInput.prop('disabled', false);
-                    $chatSend.prop('disabled', false);
-                    addMessage('Network error.', 'bot');
-                });
-            }
+            $.post(ajaxUrl, {
+                action: 'gj_ai_chat',
+                post_id: postId,
+                message: message,
+                chat_session_id: chatSessionId
+            }, function(response) {
+                $loading.remove();
+                $chatInput.prop('disabled', false);
+                $chatSend.prop('disabled', false);
+                $chatInput.focus();
 
-            $chatSend.off('click').on('click', sendMessage);
-            $chatInput.off('keypress').on('keypress', function(e) {
-                if (e.key === 'Enter') sendMessage();
-            });
-
-            // --- Typing Animation ---
-            var $container = $('#gj_ai_chat_area_' + postId).closest('.gj-ai-takeaway-container');
-            var $contentEl = $container.find('.gj-ai-takeaway-content');
-            
-            if ($contentEl.length && !$contentEl.data('typing-started')) {
-                $contentEl.data('typing-started', true);
-                var fullText = $contentEl.attr('data-text') || "";
-                var charIndex = 0;
-                var typingSpeed = 10;
-
-                function gjStartTyping() {
-                    if (charIndex < fullText.length) {
-                        $contentEl.append(fullText.charAt(charIndex));
-                        charIndex++;
-                        setTimeout(gjStartTyping, typingSpeed);
-                    } else {
-                        $contentEl.addClass('typing-done');
-                        $chatInput.prop('disabled', false);
-                        $chatSend.prop('disabled', false);
-                    }
-                }
-
-                if ('IntersectionObserver' in window && !window.gj_is_admin) {
-                    var observer = new IntersectionObserver(function(entries) {
-                        if (entries[0].isIntersecting) {
-                            gjStartTyping();
-                            observer.disconnect();
-                        }
-                    }, { threshold: 0.2 });
-                    observer.observe($contentEl[0]);
+                if (response.success) {
+                    addMessage(response.data, 'bot');
                 } else {
-                    gjStartTyping();
+                    var errorMsg = response.data && response.data.message ? response.data.message : 'Sorry, something went wrong.';
+                    addMessage(errorMsg, 'bot');
+                }
+            }).fail(function() {
+                $loading.remove();
+                $chatInput.prop('disabled', false);
+                $chatSend.prop('disabled', false);
+                addMessage('Network error.', 'bot');
+            });
+        }
+
+        $chatSend.off('click').on('click', sendMessage);
+        $chatInput.off('keypress').on('keypress', function(e) {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        // --- Typing Animation ---
+        var $container = $chatArea.closest('.gj-ai-takeaway-container');
+        var $contentEl = $container.find('.gj-ai-takeaway-content');
+        
+        if ($contentEl.length && !$contentEl.data('typing-started')) {
+            $contentEl.data('typing-started', true);
+            var fullText = $contentEl.attr('data-text') || "";
+            var charIndex = 0;
+            var typingSpeed = 10;
+
+            function gjStartTyping() {
+                if (charIndex < fullText.length) {
+                    $contentEl.append(fullText.charAt(charIndex));
+                    charIndex++;
+                    setTimeout(gjStartTyping, typingSpeed);
+                } else {
+                    $contentEl.addClass('typing-done');
+                    $chatInput.prop('disabled', false);
+                    $chatSend.prop('disabled', false);
                 }
             }
-        };
 
-        $(document).ready(function() {
-            var postId = '<?php echo esc_js($post_id); ?>';
-            var ajaxUrl = '<?php echo esc_url(admin_url('admin-ajax.php')); ?>';
-            var sessKey = 'gj_ai_sess_' + postId;
-            var chatSessionId = sessionStorage.getItem(sessKey);
-            if (!chatSessionId) {
-                chatSessionId = 'gj_sess_' + Math.random().toString(36).substring(2, 15) + Date.now();
-                sessionStorage.setItem(sessKey, chatSessionId);
+            if ('IntersectionObserver' in window && !window.gj_is_admin) {
+                var observer = new IntersectionObserver(function(entries) {
+                    if (entries[0].isIntersecting) {
+                        gjStartTyping();
+                        observer.disconnect();
+                    }
+                }, { threshold: 0.2 });
+                observer.observe($contentEl[0]);
+            } else {
+                gjStartTyping();
             }
+        } else if ($contentEl.hasClass('typing-done')) {
+            // Already typed out elements should be enabled
+            $chatInput.prop('disabled', false);
+            $chatSend.prop('disabled', false);
+        }
+    };
 
-            window.gj_ai_init_chatbot(postId, chatSessionId, ajaxUrl);
-        });
-    })(jQuery);
+    jQuery(document).ready(function($) {
+        var postId = '<?php echo esc_js($post_id); ?>';
+        var ajaxUrl = '<?php echo esc_url(admin_url('admin-ajax.php')); ?>';
+        var sessKey = 'gj_ai_sess_' + postId;
+        var chatSessionId = sessionStorage.getItem(sessKey);
+        if (!chatSessionId) {
+            chatSessionId = 'gj_sess_' + Math.random().toString(36).substring(2, 15) + Date.now();
+            sessionStorage.setItem(sessKey, chatSessionId);
+        }
+        window.gj_ai_init_chatbot(postId, chatSessionId, ajaxUrl);
+    });
     </script>
 
     <?php
