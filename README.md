@@ -1,13 +1,13 @@
-# GJ AI Takeaway 🧠
+# SFF AI Takeaway 🧠
 
-**GJ AI Takeaway** is a premium WordPress plugin that integrates a state-of-the-art AI chatbot into your articles. It doesn't just "chat"; it connects deeply with your content by gathering context from post meta, author details, and "Eternal Ground" information to provide highly accurate, article-specific answers.
+**SFF AI Takeaway** is a premium WordPress plugin that integrates a state-of-the-art AI chatbot into your articles. It doesn't just "chat"; it connects deeply with your content by gathering context from post meta, author details, and "Eternal Ground" information to provide highly accurate, article-specific answers.
 
 ---
 
 ## ✨ Key Features
 
 - **Dual Model Support**: Configure separate AI models for Logged-in Users vs. Guests (e.g., use a powerful model for subscribers and a cost-effective one for guests).
-- **Automatic OCR Manuscript Retrieval**: Automatically fetches `final.md` from the "Wasabi Manuscript" private bucket (via GJ Doc lifecycle) and attaches it as a primary document for AI analysis.
+- **Automatic OCR Manuscript Retrieval**: Automatically fetches `final.md` from the "Wasabi Manuscript" private bucket (via SFF Doc lifecycle) and attaches it as a primary document for AI analysis.
 - **Multimodal Binary Attachments**: Support for sending actual file content (PDFs, Images, etc.) to the AI in binary/multimodal format, allowing the AI to "see" your manuscript or related data.
 - **Dynamic Typing Animation**: The "AI Takeaway" summary types out word-by-word when the user scrolls to it, creating a "live" feel.
 - **Eternal Ground Connectivity**: A unique meta-layer that allows you to provide "eternal" context to the AI, ensuring it knows the deep background of your topic.
@@ -22,7 +22,7 @@
 ## 🚀 Quick Start
 
 ### 1. Installation
-1. Ensure you have the plugin files in `wp-content/plugins/ai-takeaway-main/`.
+1. Ensure you have the plugin files in `wp-content/plugins/sff-ai-takeaway/`.
 2. Activate the plugin through the WordPress 'Plugins' menu.
 
 ### 2. Configuration
@@ -61,22 +61,22 @@ You can use these tags in your **System Prompt** setting:
 
 The plugin is designed with a modular architecture to ensure high performance and easy maintenance:
 
-### 1. `gj-ai-takeaway.php` (Core)
+### 1. `sff-ai-takeaway.php` (Core)
 - **Responsibility**: Main entry point, plugin activation/deactivation, and scheduled maintenance (Cron).
-- **Key Function**: `gj_ai_perform_log_cleanup()` - Handles the automated removal of old logs.
+- **Key Function**: `sff_ai_perform_log_cleanup()` - Handles the automated removal of old logs.
 
 ### 2. `shortcode.php` (UI/UX)
 - **Responsibility**: Renders the frontend chatbot interface and the "Typing Animation."
-- **Key Function**: `gj_ai_takeaway_shortcode()` - The primary engine for the `[ai_takeaway]` shortcode.
+- **Key Function**: `sff_ai_takeaway_shortcode()` - The primary engine for the `[ai_takeaway]` shortcode.
 
 ### 3. `admin-settings.php` (Configuration)
 - **Responsibility**: Handles the global settings page, dual-model configuration, and dynamic meta-mapping interface.
-- **Key Function**: `gj_ai_add_preview_metabox()` - Registers the live simulator on the post-edit screen.
+- **Key Function**: `sff_ai_add_preview_metabox()` - Registers the live simulator on the post-edit screen.
 
 ### 4. `ajax-handlers.php` (Real-time Processing)
 - **Responsibility**: Manages background communication, multimodal message construction, and context gathering.
-- **Key Function**: `gj_ai_chat_handler()` - Processes messages and handles session-based history.
-- **Helper**: `gj_ai_gather_post_context()` - Fetches meta, author data, and OCR manuscripts.
+- **Key Function**: `sff_ai_chat_handler()` - Processes messages and handles session-based history.
+- **Helper**: `sff_ai_gather_post_context()` - Fetches meta, author data, and OCR manuscripts.
 
 ### 5. `ai-client.php` (Connectivity)
 - **Responsibility**: Pure API wrapper for sending standard and multimodal requests to the configured AI endpoint.
@@ -97,7 +97,7 @@ The plugin is designed with a modular architecture to ensure high performance an
 
 ## 🔧 Technical Details
 
-- **Database**: Custom table `wp_gj_ai_logs` tracks interactions.
+- **Database**: Custom table `wp_sff_ai_logs` tracks interactions.
 - **Rate Limits**: IP-based transients for guests; User-ID based for logged-in users.
 - **Styling**: Vanilla CSS with modern gradients and responsive layout.
 - **Integration**: Deeply integrates with the Wasabi Markdown Article plugin ecosystem for OCR support.
@@ -113,3 +113,4 @@ The plugin includes diagnostic tools in the settings page:
 ---
 
 *Connecting your content with the Eternal Ground.*
+

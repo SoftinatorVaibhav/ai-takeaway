@@ -1,6 +1,6 @@
 <?php
 /**
- * Comprehensive test script for GJ AI Takeaway.
+ * Comprehensive test script for SFF AI Takeaway.
  * This script will:
  * 1. Setup test data (Post meta, User meta)
  * 2. Configure mappings
@@ -36,13 +36,13 @@ $settings = array(
         array('key' => 'country_origin', 'label' => 'Country'),
     )
 );
-update_option('gj_ai_takeaway_settings', $settings);
+update_option('sff_ai_takeaway_settings', $settings);
 
 // --- EXECUTE TEST ---
 echo "--- COMPREHENSIVE TEST ---\n";
 
 // 1. Gather Context
-$context = gj_ai_gather_post_context($post_id);
+$context = sff_ai_gather_post_context($post_id);
 echo "1. Context Gathering:\n";
 echo "   - Title: " . $context['title'] . "\n";
 echo "   - Meta 'Eternal Ground': " . $context['meta']['Eternal Ground'] . "\n";
@@ -57,7 +57,7 @@ if ($context['meta']['Eternal Ground'] === 'This is the sacred eternal ground of
 
 // 2. Tag Replacement
 echo "\n2. Tag Replacement:\n";
-$rendered = gj_ai_replace_tags($settings['prompt'], $context);
+$rendered = sff_ai_replace_tags($settings['prompt'], $context);
 echo "   - Rendered Prompt: " . $rendered . "\n";
 
 if (strpos($rendered, 'sacred eternal ground') !== false && strpos($rendered, 'Wakanda') !== false) {
@@ -69,7 +69,7 @@ if (strpos($rendered, 'sacred eternal ground') !== false && strpos($rendered, 'W
 // 3. Shortcode check
 echo "\n3. Shortcode Check:\n";
 $shortcode_out = do_shortcode('[ai_takeaway post_id="1"]');
-if (strpos($shortcode_out, 'gj-ai-takeaway-container') !== false) {
+if (strpos($shortcode_out, 'sff-ai-takeaway-container') !== false) {
     echo "   [OK] Shortcode output found.\n";
     if (strpos($shortcode_out, 'greeting to the world') !== false) {
         echo "   [OK] Shortcode includes correct takeaway data.\n";

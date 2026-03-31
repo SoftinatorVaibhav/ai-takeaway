@@ -1,19 +1,19 @@
 <?php
 /**
- * AI Client for GJ AI Takeaway
+ * AI Client for SFF AI Takeaway
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class GJ_AI_Client {
+class SFF_AI_Client {
     private $endpoint;
     private $api_key;
     private $model;
 
     public function __construct( $model = null ) {
-        $settings = get_option( 'gj_ai_takeaway_settings', array() );
+        $settings = get_option( 'sff_ai_takeaway_settings', array() );
         $this->endpoint = $settings['endpoint'] ?? 'https://openrouter.ai/api/v1/chat/completions';
         $this->api_key  = $settings['api_key'] ?? '';
         
@@ -39,7 +39,7 @@ class GJ_AI_Client {
                 'Authorization' => 'Bearer ' . $this->api_key,
                 'Content-Type'  => 'application/json',
                 'HTTP-Referer'  => home_url(), 
-                'X-Title'       => 'GJ AI Takeaway WP Plugin',
+                'X-Title'       => 'SFF AI Takeaway WP Plugin',
             ),
             'body'    => wp_json_encode( $body ),
             'timeout' => 60,
@@ -59,3 +59,4 @@ class GJ_AI_Client {
         return "Error: AI response format invalid. " . $res_body;
     }
 }
+

@@ -1,8 +1,8 @@
 <?php
-// File: ai-takeaway.php
+// File: sff-ai-takeaway.php
 
 // AI Takeaway Shortcode for Article Page
-function gj_ai_takeaway_shortcode($atts) {
+function sff_ai_takeaway_shortcode($atts) {
     // Shortcode attributes
     $atts = shortcode_atts(
         array(
@@ -39,7 +39,7 @@ function gj_ai_takeaway_shortcode($atts) {
     ob_start();
     ?>
     <style>
-        .gj-ai-takeaway-container {
+        .sff-ai-takeaway-container {
             position: relative;
             border: 1.5px solid transparent;
             border-radius: 12px;
@@ -51,7 +51,7 @@ function gj_ai_takeaway_shortcode($atts) {
             box-shadow: 0 4px 20px rgba(0,0,0,0.02);
         }
 
-        .gj-ai-takeaway-header h3 {
+        .sff-ai-takeaway-header h3 {
             margin: 0 0 15px 0;
             font-size: 36px;
             font-weight: 500;
@@ -59,27 +59,27 @@ function gj_ai_takeaway_shortcode($atts) {
             letter-spacing: 0.5px;
             text-transform: uppercase;
         }
-        .gj-ai-takeaway-content {
+        .sff-ai-takeaway-content {
             color: #888;
             font-size: 20px;
             line-height: 1.6;
             margin-bottom: 30px;
             min-height: 1.6em; /* Prevent layout jump */
         }
-        .gj-ai-takeaway-content::after {
+        .sff-ai-takeaway-content::after {
             content: "";
             border-right: 3px solid #AB11D5;
             margin-left: 2px;
-            animation: gjAiBlink 0.8s infinite;
+            animation: sffAiBlink 0.8s infinite;
         }
-        .gj-ai-takeaway-content.typing-done::after {
+        .sff-ai-takeaway-content.typing-done::after {
             display: none;
         }
-        @keyframes gjAiBlink {
+        @keyframes sffAiBlink {
             0%, 100% { opacity: 1; }
             50% { opacity: 0; }
         }
-        .gj-ai-chat-area {
+        .sff-ai-chat-area {
             display: flex;
             flex-direction: column;
             gap: 12px;
@@ -88,28 +88,28 @@ function gj_ai_takeaway_shortcode($atts) {
             overflow-y: auto;
             scroll-behavior: smooth;
         }
-        .gj-ai-msg {
+        .sff-ai-msg {
             padding: 12px 20px;
             border-radius: 20px;
             max-width: 85%;
             font-size: 14px;
             line-height: 1.5;
             word-wrap: break-word;
-            animation: gjAiFadeIn 0.3s ease-in-out;
+            animation: sffAiFadeIn 0.3s ease-in-out;
         }
-        .gj-ai-msg-received {
+        .sff-ai-msg-received {
             align-self: flex-start;
             background-color: #52009508;
             color: #444;
             border-bottom-left-radius: 4px;
         }
-        .gj-ai-msg-sent {
+        .sff-ai-msg-sent {
             align-self: flex-end;
             background-color: #f1ecf5;
             color: #333;
             border-bottom-right-radius: 4px;
         }
-        .gj-ai-input-container {
+        .sff-ai-input-container {
             border: 1.5px solid transparent;
             border-radius: 12px;
             display: flex;
@@ -117,7 +117,7 @@ function gj_ai_takeaway_shortcode($atts) {
             padding: 10px 16px;
             background: linear-gradient(#efe9f9, #efe9f9) padding-box, linear-gradient(to right, #AB11D5, #4F31C8) border-box;
         }
-        .gj-ai-input-container input {
+        .sff-ai-input-container input {
             flex: 1;
             border: none !important;
             background: transparent !important;
@@ -128,10 +128,10 @@ function gj_ai_takeaway_shortcode($atts) {
             padding: 8px 0;
             margin: 0;
         }
-        .gj-ai-input-container input::placeholder {
+        .sff-ai-input-container input::placeholder {
             color: #a9a9a9;
         }
-        .gj-ai-input-container button {
+        .sff-ai-input-container button {
             background: none !important;
             border: none;
             cursor: pointer;
@@ -140,42 +140,42 @@ function gj_ai_takeaway_shortcode($atts) {
             align-items: center;
             transition: opacity 0.2s;
         }
-        .gj-ai-input-container button:disabled {
+        .sff-ai-input-container button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
         }
-        @keyframes gjAiFadeIn {
+        @keyframes sffAiFadeIn {
             from { opacity: 0; transform: translateY(5px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .gj-ai-loading-dots span {
-            animation: gjAiDots 1.4s infinite both;
+        .sff-ai-loading-dots span {
+            animation: sffAiDots 1.4s infinite both;
             font-size: 20px;
             margin: 0 1px;
         }
-        .gj-ai-loading-dots span:nth-child(2) { animation-delay: .2s; }
-        .gj-ai-loading-dots span:nth-child(3) { animation-delay: .4s; }
-        @keyframes gjAiDots {
+        .sff-ai-loading-dots span:nth-child(2) { animation-delay: .2s; }
+        .sff-ai-loading-dots span:nth-child(3) { animation-delay: .4s; }
+        @keyframes sffAiDots {
             0%, 80%, 100% { opacity: 0; }
             40% { opacity: 1; }
         }
     </style>
 
-    <div class="gj-ai-takeaway-container">
-        <div class="gj-ai-takeaway-header">
-            <h3>AI TAKEAWAY</h3>
+    <div class="sff-ai-takeaway-container">
+        <div class="sff-ai-takeaway-header">
+            <h3>IntelliPaper</h3>
         </div>
 
-        <div class="gj-ai-takeaway-content" data-text="<?php echo esc_attr($ai_takeaway_data); ?>">
+        <div class="sff-ai-takeaway-content" data-text="<?php echo esc_attr($ai_takeaway_data); ?>">
             <!-- Typing animation handled via JS -->
         </div>
 
-        <div class="gj-ai-chat-area" id="gj_ai_chat_area_<?php echo esc_attr($post_id); ?>">
+        <div class="sff-ai-chat-area" id="sff_ai_chat_area_<?php echo esc_attr($post_id); ?>">
         </div>
 
-        <div class="gj-ai-input-container">
-            <input type="text" id="gj_ai_chat_input_<?php echo esc_attr($post_id); ?>" placeholder="Ask Anything" autocomplete="off" disabled />
-            <button type="button" id="gj_ai_chat_send_<?php echo esc_attr($post_id); ?>" aria-label="Send Message" disabled>
+        <div class="sff-ai-input-container">
+            <input type="text" id="sff_ai_chat_input_<?php echo esc_attr($post_id); ?>" placeholder="Ask Anything" autocomplete="off" disabled />
+            <button type="button" id="sff_ai_chat_send_<?php echo esc_attr($post_id); ?>" aria-label="Send Message" disabled>
                 <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M10.4809 8.9516L22.5084 4.94243C27.9059 3.14327 30.8384 6.08993 29.0534 11.4874L25.0443 23.5149C22.3526 31.6041 17.9326 31.6041 15.2409 23.5149L14.0509 19.9449L10.4809 18.7549C2.39177 16.0633 2.39177 11.6574 10.4809 8.9516Z" stroke="#292D32" stroke-width="2.125" stroke-linecap="round" stroke-linejoin="round"/>
                     <path d="M14.3203 19.3358L19.392 14.25" stroke="#292D32" stroke-width="2.125" stroke-linecap="round" stroke-linejoin="round"/>
@@ -189,28 +189,28 @@ function gj_ai_takeaway_shortcode($atts) {
 
     <script>
     // Define global function outside IIFE for reliability
-    window.gj_ai_init_chatbot = function(postId, chatSessionId, ajaxUrl) {
+    window.sff_ai_init_chatbot = function(postId, chatSessionId, ajaxUrl) {
         var $ = jQuery;
-        console.log('Initializing GJ AI Chatbot for Post ID:', postId);
+        console.log('Initializing SFF AI Chatbot for Post ID:', postId);
         
-        var $chatInput = $('#gj_ai_chat_input_' + postId);
-        var $chatSend = $('#gj_ai_chat_send_' + postId);
-        var $chatArea = $('#gj_ai_chat_area_' + postId);
+        var $chatInput = $('#sff_ai_chat_input_' + postId);
+        var $chatSend = $('#sff_ai_chat_send_' + postId);
+        var $chatArea = $('#sff_ai_chat_area_' + postId);
 
         if ($chatArea.length === 0) {
-            console.warn('GJ AI Chatbot Area not found for Post ID:', postId);
+            console.warn('SFF AI Chatbot Area not found for Post ID:', postId);
             return;
         }
 
         function addMessage(text, side) {
-            var $msg = $('<div class="gj-ai-msg"></div>').addClass(side === 'user' ? 'gj-ai-msg-sent' : 'gj-ai-msg-received').text(text);
+            var $msg = $('<div class="sff-ai-msg"></div>').addClass(side === 'user' ? 'sff-ai-msg-sent' : 'sff-ai-msg-received').text(text);
             $chatArea.append($msg);
             $chatArea.scrollTop($chatArea[0].scrollHeight);
             return $msg;
         }
 
         function addLoading() {
-            var $loader = $('<div class="gj-ai-msg gj-ai-msg-received gj-ai-loading-dots"><span>.</span><span>.</span><span>.</span></div>');
+            var $loader = $('<div class="sff-ai-msg sff-ai-msg-received sff-ai-loading-dots"><span>.</span><span>.</span><span>.</span></div>');
             $chatArea.append($loader);
             $chatArea.scrollTop($chatArea[0].scrollHeight);
             return $loader;
@@ -228,7 +228,7 @@ function gj_ai_takeaway_shortcode($atts) {
             $chatSend.prop('disabled', true);
 
             $.post(ajaxUrl, {
-                action: 'gj_ai_chat',
+                action: 'sff_ai_chat',
                 post_id: postId,
                 message: message,
                 chat_session_id: chatSessionId
@@ -258,8 +258,8 @@ function gj_ai_takeaway_shortcode($atts) {
         });
 
         // --- Typing Animation ---
-        var $container = $chatArea.closest('.gj-ai-takeaway-container');
-        var $contentEl = $container.find('.gj-ai-takeaway-content');
+        var $container = $chatArea.closest('.sff-ai-takeaway-container');
+        var $contentEl = $container.find('.sff-ai-takeaway-content');
         
         if ($contentEl.length && !$contentEl.data('typing-started')) {
             $contentEl.data('typing-started', true);
@@ -267,11 +267,11 @@ function gj_ai_takeaway_shortcode($atts) {
             var charIndex = 0;
             var typingSpeed = 10;
 
-            function gjStartTyping() {
+            function sffStartTyping() {
                 if (charIndex < fullText.length) {
                     $contentEl.append(fullText.charAt(charIndex));
                     charIndex++;
-                    setTimeout(gjStartTyping, typingSpeed);
+                    setTimeout(sffStartTyping, typingSpeed);
                 } else {
                     $contentEl.addClass('typing-done');
                     $chatInput.prop('disabled', false);
@@ -279,16 +279,16 @@ function gj_ai_takeaway_shortcode($atts) {
                 }
             }
 
-            if ('IntersectionObserver' in window && !window.gj_is_admin) {
+            if ('IntersectionObserver' in window && !window.sff_is_admin) {
                 var observer = new IntersectionObserver(function(entries) {
                     if (entries[0].isIntersecting) {
-                        gjStartTyping();
+                        sffStartTyping();
                         observer.disconnect();
                     }
                 }, { threshold: 0.2 });
                 observer.observe($contentEl[0]);
             } else {
-                gjStartTyping();
+                sffStartTyping();
             }
         } else if ($contentEl.hasClass('typing-done')) {
             // Already typed out elements should be enabled
@@ -300,17 +300,18 @@ function gj_ai_takeaway_shortcode($atts) {
     jQuery(document).ready(function($) {
         var postId = '<?php echo esc_js($post_id); ?>';
         var ajaxUrl = '<?php echo esc_url(admin_url('admin-ajax.php')); ?>';
-        var sessKey = 'gj_ai_sess_' + postId;
+        var sessKey = 'sff_ai_sess_' + postId;
         var chatSessionId = sessionStorage.getItem(sessKey);
         if (!chatSessionId) {
-            chatSessionId = 'gj_sess_' + Math.random().toString(36).substring(2, 15) + Date.now();
+            chatSessionId = 'sff_sess_' + Math.random().toString(36).substring(2, 15) + Date.now();
             sessionStorage.setItem(sessKey, chatSessionId);
         }
-        window.gj_ai_init_chatbot(postId, chatSessionId, ajaxUrl);
+        window.sff_ai_init_chatbot(postId, chatSessionId, ajaxUrl);
     });
     </script>
 
     <?php
     return ob_get_clean();
 }
-add_shortcode('ai_takeaway', 'gj_ai_takeaway_shortcode');
+add_shortcode('ai_takeaway', 'sff_ai_takeaway_shortcode');
+

@@ -1,22 +1,22 @@
 <?php
 /**
- * AJAX Handlers for GJ AI Takeaway
+ * AJAX Handlers for SFF AI Takeaway
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-require_once GJ_AI_TAKEAWAY_DIR . 'ai-client.php';
+require_once SFF_AI_TAKEAWAY_DIR . 'ai-client.php';
 
 /**
  * Gather Context for a Post
  */
-function gj_ai_gather_post_context( $post_id ) {
+function sff_ai_gather_post_context( $post_id ) {
     $post = get_post( $post_id );
     if ( ! $post ) return array();
 
-    $settings = get_option( 'gj_ai_takeaway_settings', array() );
+    $settings = get_option( 'sff_ai_takeaway_settings', array() );
     
     // Author Data (Dynamic)
     $author_id = $post->post_author;
@@ -79,7 +79,7 @@ function gj_ai_gather_post_context( $post_id ) {
             }
 
             if ( $file_url ) {
-                $binary = gj_ai_get_file_binary($file_url);
+                $binary = sff_ai_get_file_binary($file_url);
                 if ( $binary ) {
                     $attachments_binary[] = array(
                         'label' => $label,
@@ -144,7 +144,7 @@ function gj_ai_gather_post_context( $post_id ) {
 /**
  * Replace Dynamic Tags in a String
  */
-function gj_ai_replace_tags( $text, $context ) {
+function sff_ai_replace_tags( $text, $context ) {
     $post_id = $context['post_id'] ?? 0;
 
     $post = get_post($post_id);
@@ -200,7 +200,7 @@ function gj_ai_replace_tags( $text, $context ) {
 /**
  * Get Client IP
  */
-function gj_ai_get_ip() {
+function sff_ai_get_ip() {
     if (!empty($_SERVER['HTTP_CLIENT_IP'])) return $_SERVER['HTTP_CLIENT_IP'];
     if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) return explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0];
     return $_SERVER['REMOTE_ADDR'];
@@ -209,7 +209,7 @@ function gj_ai_get_ip() {
 /**
  * Get File Binary Content from various sources
  */
-function gj_ai_get_file_binary( $source ) {
+function sff_ai_get_file_binary( $source ) {
     if ( ! $source ) return null;
 
     // 1. If it's a local file path
@@ -229,18 +229,18 @@ function gj_ai_get_file_binary( $source ) {
 /**
  * Handle Frontend Chat AJAX
  */
-add_action( 'wp_ajax_gj_ai_chat', 'gj_ai_chat_handler' );
-add_action( 'wp_ajax_nopriv_gj_ai_chat', 'gj_ai_chat_handler' );
-function gj_ai_chat_handler() {
+add_action( 'wp_ajax_sff_ai_chat', 'sff_ai_chat_handler' );
+add_action( 'wp_ajax_nopriv_sff_ai_chat', 'sff_ai_chat_handler' );
+function sff_ai_chat_handler() {
     $post_id = intval( $_POST['post_id'] );
     $user_msg = sanitize_text_field( $_POST['message'] );
     $chat_session_id = sanitize_text_field( $_POST['chat_session_id'] ?? '' );
     
     if ( ! $post_id || ! $user_msg ) wp_send_json_error( 'Invalid request' );
 
-    $settings = get_option( 'gj_ai_takeaway_settings', array() );
+    $settings = get_option( 'sff_ai_takeaway_settings', array() );
     $is_logged_in = is_user_logged_in();
-    $ip = gj_ai_get_ip();
+    $ip = sff_ai_get_ip();
     $user_id = get_current_user_id();
 
     // --- Rate Limiting ---
@@ -248,14 +248,14 @@ function gj_ai_chat_handler() {
     $user_limit  = isset($settings['user_limit']) ? intval($settings['user_limit']) : 100;
 
     if ( !$is_logged_in ) {
-        $transient_key = 'gj_ai_limit_' . md5($ip);
+        $transient_key = 'sff_ai_limit_' . md5($ip);
         $count = (int) get_transient($transient_key);
         if ( $count >= $guest_limit ) {
             wp_send_json_error( array('limit_reached' => true, 'message' => 'Daily limit reached. Please login for unlimited chats.') );
         }
         set_transient($transient_key, $count + 1, DAY_IN_SECONDS);
     } else {
-        $transient_key = 'gj_ai_limit_user_' . $user_id;
+        $transient_key = 'sff_ai_limit_user_' . $user_id;
         $count = (int) get_transient($transient_key);
         if ( $count >= $user_limit ) {
             wp_send_json_error( array('limit_reached' => true, 'message' => 'You have reached your daily limit of chats.') );
@@ -265,14 +265,14 @@ function gj_ai_chat_handler() {
 
 
     // --- Stateful Chat Flow ---
-    $history_transient = 'gj_ai_history_' . $chat_session_id;
+    $history_transient = 'sff_ai_history_' . $chat_session_id;
     $messages = get_transient($history_transient);
 
     $system_prompt = $settings['prompt'] ?? '';
     
     if ( !$messages ) {
         // First message: Include Context
-        $context = gj_ai_gather_post_context( $post_id );
+        $context = sff_ai_gather_post_context( $post_id );
         
         // Separate binaries for multimodal sending
         $binaries = $context['attachments_binary'] ?? array();
@@ -280,7 +280,7 @@ function gj_ai_chat_handler() {
         unset($context['_debug']); // Save tokens
 
         // Render Prompt
-        $rendered_prompt = gj_ai_replace_tags( $system_prompt, $context );
+        $rendered_prompt = sff_ai_replace_tags( $system_prompt, $context );
 
         $user_text = "CONTEXT DATA:\n" . wp_json_encode( $context ) . "\n\nQUESTION: " . $user_msg;
         
@@ -317,7 +317,7 @@ function gj_ai_chat_handler() {
         ? ($settings['model_login'] ?? $default_model) 
         : ($settings['model_guest'] ?? $default_model);
 
-    $client = new GJ_AI_Client( $model_to_use );
+    $client = new SFF_AI_Client( $model_to_use );
     $ai_response = $client->get_response( $messages );
 
     if ( strpos($ai_response, 'Error:') === 0 ) {
@@ -331,7 +331,7 @@ function gj_ai_chat_handler() {
 
     // --- Logging ---
     global $wpdb;
-    $wpdb->insert($wpdb->prefix . 'gj_ai_logs', array(
+    $wpdb->insert($wpdb->prefix . 'sff_ai_logs', array(
         'chat_session_id' => $chat_session_id,
         'ip_address' => $ip,
         'user_id'    => $user_id ? $user_id : null,
@@ -346,17 +346,17 @@ function gj_ai_chat_handler() {
 /**
  * Handle Tester AJAX
  */
-add_action( 'wp_ajax_gj_ai_test_context', 'gj_ai_test_context_handler' );
-function gj_ai_test_context_handler() {
-    check_ajax_referer( 'gj_ai_test_nonce', 'nonce' );
+add_action( 'wp_ajax_sff_ai_test_context', 'sff_ai_test_context_handler' );
+function sff_ai_test_context_handler() {
+    check_ajax_referer( 'sff_ai_test_nonce', 'nonce' );
     if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Permission denied' );
 
     $post_id = intval( $_POST['post_id'] );
-    $context = gj_ai_gather_post_context( $post_id );
+    $context = sff_ai_gather_post_context( $post_id );
     
     if ( empty( $context ) ) wp_send_json_error( 'Post not found' );
 
-    $settings = get_option( 'gj_ai_takeaway_settings', array() );
+    $settings = get_option( 'sff_ai_takeaway_settings', array() );
 
     // Determine which model to use
     $is_logged_in = is_user_logged_in();
@@ -365,10 +365,10 @@ function gj_ai_test_context_handler() {
         ? ($settings['model_login'] ?? $default_model) 
         : ($settings['model_guest'] ?? $default_model);
 
-    $client = new GJ_AI_Client( $model_to_use );
+    $client = new SFF_AI_Client( $model_to_use );
     $system_prompt = $settings['prompt'] ?? '';
 
-    $rendered_prompt = gj_ai_replace_tags( $system_prompt, $context );
+    $rendered_prompt = sff_ai_replace_tags( $system_prompt, $context );
 
     $binaries = $context['attachments_binary'] ?? array();
     unset($context['attachments_binary']);
@@ -408,15 +408,15 @@ function gj_ai_test_context_handler() {
 /**
  * Handle Explore Meta AJAX
  */
-add_action( 'wp_ajax_gj_ai_explore_meta', 'gj_ai_explore_meta_handler' );
-function gj_ai_explore_meta_handler() {
-    check_ajax_referer( 'gj_ai_test_nonce', 'nonce' );
+add_action( 'wp_ajax_sff_ai_explore_meta', 'sff_ai_explore_meta_handler' );
+function sff_ai_explore_meta_handler() {
+    check_ajax_referer( 'sff_ai_test_nonce', 'nonce' );
     if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Permission denied' );
 
     $post_id = intval( $_POST['post_id'] );
     if ( ! $post_id ) wp_send_json_error( 'Invalid Post ID' );
 
-    $context = gj_ai_gather_post_context( $post_id );
+    $context = sff_ai_gather_post_context( $post_id );
     if ( empty($context) ) wp_send_json_error( 'Post not found' );
 
     wp_send_json_success( array(
@@ -432,17 +432,17 @@ function gj_ai_explore_meta_handler() {
 /**
  * Handle Shortcode Preview AJAX
  */
-add_action( 'wp_ajax_gj_ai_get_shortcode_preview', 'gj_ai_get_shortcode_preview_handler' );
-function gj_ai_get_shortcode_preview_handler() {
-    check_ajax_referer( 'gj_ai_test_nonce', 'nonce' );
+add_action( 'wp_ajax_sff_ai_get_shortcode_preview', 'sff_ai_get_shortcode_preview_handler' );
+function sff_ai_get_shortcode_preview_handler() {
+    check_ajax_referer( 'sff_ai_test_nonce', 'nonce' );
     if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Permission denied' );
 
     $post_id = intval( $_POST['post_id'] );
     if ( ! $post_id ) wp_send_json_error( 'Invalid Post ID' );
 
     header('Content-Type: text/html');
-    if (function_exists('gj_ai_takeaway_shortcode')) {
-        echo gj_ai_takeaway_shortcode( array( 'post_id' => $post_id ) );
+    if (function_exists('sff_ai_takeaway_shortcode')) {
+        echo sff_ai_takeaway_shortcode( array( 'post_id' => $post_id ) );
     } else {
         echo "Error: Shortcode function not found.";
     }

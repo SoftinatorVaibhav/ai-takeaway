@@ -1,6 +1,6 @@
 <?php
 /**
- * Admin Settings for GJ AI Takeaway
+ * Admin Settings for SFF AI Takeaway
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -8,33 +8,33 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Register Hooks
-add_action( 'admin_menu', 'gj_ai_takeaway_menu' );
-// add_action( 'add_meta_boxes', 'gj_ai_add_preview_metabox' );
+add_action( 'admin_menu', 'sff_ai_takeaway_menu' );
+// add_action( 'add_meta_boxes', 'sff_ai_add_preview_metabox' );
 
-function gj_ai_takeaway_menu() {
+function sff_ai_takeaway_menu() {
     $icon_svg = 'data:image/svg+xml;base64,' . base64_encode('<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 2C5.58 2 2 5.58 2 10C2 14.42 5.58 18 10 18C14.42 18 18 14.42 18 10C18 5.58 14.42 2 10 2ZM10 16C6.69 16 4 13.31 4 10C4 6.69 6.69 4 10 4C13.31 4 16 6.69 16 10C16 13.31 13.31 16 10 16Z" fill="white"/><path d="M10 6C7.79 6 6 7.79 6 10C6 12.21 7.79 14 10 14C12.21 14 14 12.21 14 10C14 7.79 12.21 6 10 6ZM10 12C8.9 12 8 11.1 8 10C8 8.9 8.9 8 10 8C11.1 8 12 8.9 12 10C12 11.1 11.1 12 10 12Z" fill="white"/><path d="M10 9C9.45 9 9 9.45 9 10C9 10.55 9.45 11 10 11C10.55 11 11 10.55 11 10C11 9.45 10.55 9 10 9Z" fill="white"/></svg>');
 
     add_menu_page(
         'AI Takeaway',
         'AI Takeaway',
         'manage_options',
-        'gj-ai-takeaway',
-        'gj_ai_takeaway_settings_page',
+        'sff-ai-takeaway',
+        'sff_ai_takeaway_settings_page',
         $icon_svg,
         30
     );
 }
 
 // Metabox logic ends
-// add_action( 'add_meta_boxes', 'gj_ai_add_preview_metabox' ); // Removed duplicate
+// add_action( 'add_meta_boxes', 'sff_ai_add_preview_metabox' ); // Removed duplicate
 
-function gj_ai_add_preview_metabox() {
+function sff_ai_add_preview_metabox() {
     $post_types = get_post_types( array( 'public' => true ), 'names' );
     foreach ( $post_types as $screen ) {
         add_meta_box(
-            'gj_ai_takeaway_preview',
-            'GJ AI Takeaway - Visual Preview',
-            'gj_ai_preview_metabox_callback',
+            'sff_ai_takeaway_preview',
+            'SFF AI Takeaway - Visual Preview',
+            'sff_ai_preview_metabox_callback',
             $screen,
             'normal',
             'high'
@@ -42,8 +42,8 @@ function gj_ai_add_preview_metabox() {
     }
 }
 
-function gj_ai_preview_metabox_callback( $post ) {
-    echo '<div class="gj-ai-metabox-preview" style="background: #fdfdfd; padding: 20px; border: 1px solid #e5e5e5; border-radius: 8px; min-height: 200px;">';
+function sff_ai_preview_metabox_callback( $post ) {
+    echo '<div class="sff-ai-metabox-preview" style="background: #fdfdfd; padding: 20px; border: 1px solid #e5e5e5; border-radius: 8px; min-height: 200px;">';
     echo '<div style="margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">';
     echo '<strong style="color:#2271b1;">Previewing:</strong> <span>Shortcode output for this post</span>';
     echo '</div>';
@@ -54,8 +54,8 @@ function gj_ai_preview_metabox_callback( $post ) {
     ?>
     <script>
     jQuery(document).ready(function($) {
-        if (typeof window.gj_ai_init_chatbot === 'function') {
-            window.gj_ai_init_chatbot(<?php echo $post->ID; ?>, 'admin_preview_' + <?php echo $post->ID; ?>, ajaxurl);
+        if (typeof window.sff_ai_init_chatbot === 'function') {
+            window.sff_ai_init_chatbot(<?php echo $post->ID; ?>, 'admin_preview_' + <?php echo $post->ID; ?>, ajaxurl);
         }
     });
     </script>
@@ -65,13 +65,13 @@ function gj_ai_preview_metabox_callback( $post ) {
 /**
  * Settings Page Callback
  */
-function gj_ai_takeaway_settings_page() {
+function sff_ai_takeaway_settings_page() {
     if ( ! current_user_can( 'manage_options' ) ) {
         return;
     }
 
     // Save settings
-    if ( isset( $_POST['gj_ai_save_settings'] ) && check_admin_referer( 'gj_ai_settings_nonce' ) ) {
+    if ( isset( $_POST['sff_ai_save_settings'] ) && check_admin_referer( 'sff_ai_settings_nonce' ) ) {
         $settings = array(
             'endpoint'    => sanitize_text_field( $_POST['endpoint'] ),
             'api_key'     => sanitize_text_field( $_POST['api_key'] ),
@@ -82,6 +82,8 @@ function gj_ai_takeaway_settings_page() {
             'guest_limit'            => intval( $_POST['guest_limit'] ),
             'user_limit'             => intval( $_POST['user_limit'] ),
             'log_retention'          => intval( $_POST['log_retention'] ),
+            'article_meta_mappings'  => isset($_POST['meta_mapping']) ? (array)$_POST['meta_mapping'] : array(),
+            'user_meta_mappings'     => isset($_POST['user_meta_mapping']) ? (array)$_POST['user_meta_mapping'] : array(),
         );
 
         // Sanitize article mappings
@@ -98,12 +100,12 @@ function gj_ai_takeaway_settings_page() {
         }
 
 
-        update_option( 'gj_ai_takeaway_settings', $settings );
+        update_option( 'sff_ai_takeaway_settings', $settings );
 
         echo '<div class="updated"><p>Settings saved.</p></div>';
     }
 
-    $settings = get_option( 'gj_ai_takeaway_settings', array() );
+    $settings = get_option( 'sff_ai_takeaway_settings', array() );
     $endpoint = $settings['endpoint'] ?? 'https://openrouter.ai/api/v1/chat/completions';
     $api_key = $settings['api_key'] ?? '';
     $model = $settings['model'] ?? 'google/gemini-2.0-flash-001';
@@ -131,32 +133,32 @@ function gj_ai_takeaway_settings_page() {
 
     ?>
     <div class="wrap">
-        <h1>GJ AI Takeaway Settings</h1>
+        <h1>SFF AI Takeaway Settings</h1>
         <script>
-        window.gj_is_admin = true;
+        window.sff_is_admin = true;
         // Global definition for admin preview
-        window.gj_ai_init_chatbot = function(postId, chatSessionId, ajaxUrl) {
+        window.sff_ai_init_chatbot = function(postId, chatSessionId, ajaxUrl) {
             var $ = jQuery;
-            console.log('Initializing GJ AI Chatbot for Post ID:', postId);
+            console.log('Initializing SFF AI Chatbot for Post ID:', postId);
             
-            var $chatInput = $('#gj_ai_chat_input_' + postId);
-            var $chatSend = $('#gj_ai_chat_send_' + postId);
-            var $chatArea = $('#gj_ai_chat_area_' + postId);
+            var $chatInput = $('#sff_ai_chat_input_' + postId);
+            var $chatSend = $('#sff_ai_chat_send_' + postId);
+            var $chatArea = $('#sff_ai_chat_area_' + postId);
 
             if ($chatArea.length === 0) {
-                console.warn('GJ AI Chatbot Area not found for Post ID:', postId);
+                console.warn('SFF AI Chatbot Area not found for Post ID:', postId);
                 return;
             }
 
             function addMessage(text, side) {
-                var $msg = $('<div class="gj-ai-msg"></div>').addClass(side === 'user' ? 'gj-ai-msg-sent' : 'gj-ai-msg-received').text(text);
+                var $msg = $('<div class="sff-ai-msg"></div>').addClass(side === 'user' ? 'sff-ai-msg-sent' : 'sff-ai-msg-received').text(text);
                 $chatArea.append($msg);
                 $chatArea.scrollTop($chatArea[0].scrollHeight);
                 return $msg;
             }
 
             function addLoading() {
-                var $loader = $('<div class="gj-ai-msg gj-ai-msg-received gj-ai-loading-dots"><span>.</span><span>.</span><span>.</span></div>');
+                var $loader = $('<div class="sff-ai-msg sff-ai-msg-received sff-ai-loading-dots"><span>.</span><span>.</span><span>.</span></div>');
                 $chatArea.append($loader);
                 $chatArea.scrollTop($chatArea[0].scrollHeight);
                 return $loader;
@@ -174,7 +176,7 @@ function gj_ai_takeaway_settings_page() {
                 $chatSend.prop('disabled', true);
 
                 $.post(ajaxUrl, {
-                    action: 'gj_ai_chat',
+                    action: 'sff_ai_chat',
                     post_id: postId,
                     message: message,
                     chat_session_id: chatSessionId
@@ -204,8 +206,8 @@ function gj_ai_takeaway_settings_page() {
             });
 
             // --- Typing Animation ---
-            var $container = $chatArea.closest('.gj-ai-takeaway-container');
-            var $contentEl = $container.find('.gj-ai-takeaway-content');
+            var $container = $chatArea.closest('.sff-ai-takeaway-container');
+            var $contentEl = $container.find('.sff-ai-takeaway-content');
             
             if ($contentEl.length && !$contentEl.data('typing-started')) {
                 $contentEl.data('typing-started', true);
@@ -213,11 +215,11 @@ function gj_ai_takeaway_settings_page() {
                 var charIndex = 0;
                 var typingSpeed = 10;
 
-                function gjStartTyping() {
+                function sffStartTyping() {
                     if (charIndex < fullText.length) {
                         $contentEl.append(fullText.charAt(charIndex));
                         charIndex++;
-                        setTimeout(gjStartTyping, typingSpeed);
+                        setTimeout(sffStartTyping, typingSpeed);
                     } else {
                         $contentEl.addClass('typing-done');
                         $chatInput.prop('disabled', false);
@@ -225,16 +227,16 @@ function gj_ai_takeaway_settings_page() {
                     }
                 }
 
-                if ('IntersectionObserver' in window && !window.gj_is_admin) {
+                if ('IntersectionObserver' in window && !window.sff_is_admin) {
                     var observer = new IntersectionObserver(function(entries) {
                         if (entries[0].isIntersecting) {
-                            gjStartTyping();
+                            sffStartTyping();
                             observer.disconnect();
                         }
                     }, { threshold: 0.2 });
                     observer.observe($contentEl[0]);
                 } else {
-                    gjStartTyping();
+                    sffStartTyping();
                 }
             } else if ($contentEl.hasClass('typing-done')) {
                 // Already typed out elements should be enabled
@@ -244,7 +246,7 @@ function gj_ai_takeaway_settings_page() {
         };
         </script>
         <form method="post" action="">
-            <?php wp_nonce_field( 'gj_ai_settings_nonce' ); ?>
+            <?php wp_nonce_field( 'sff_ai_settings_nonce' ); ?>
             
             <h2>API Settings</h2>
             <table class="form-table">
@@ -377,22 +379,22 @@ function gj_ai_takeaway_settings_page() {
             </table>
 
             <p class="submit">
-                <input type="submit" name="gj_ai_save_settings" id="submit" class="button button-primary" value="Save Settings">
+                <input type="submit" name="sff_ai_save_settings" id="submit" class="button button-primary" value="Save Settings">
             </p>
         </form>
 
         <hr>
 
-        <div class="gj-ai-tools-container" style="display: flex; gap: 20px;">
+        <div class="sff-ai-tools-container" style="display: flex; gap: 20px;">
             <!-- Left: Meta Explorer -->
             <div style="flex: 1; padding: 15px; background: #fff; border: 1px solid #ccd0d4; border-radius: 4px;">
                 <h3>Context Explorer (MetaBox)</h3>
                 <p class="description">Enter a Post ID to see all available meta keys and values you can use in your prompt.</p>
                 <div style="display:flex; gap:10px; margin-bottom:15px;">
                     <input type="number" id="explore_post_id" placeholder="Post ID" class="small-text">
-                    <button type="button" id="gj_explore_meta_btn" class="button">Explore Meta Keys</button>
+                    <button type="button" id="sff_explore_meta_btn" class="button">Explore Meta Keys</button>
                 </div>
-                <div id="gj_explore_results" style="max-height: 400px; overflow-y: auto;">
+                <div id="sff_explore_results" style="max-height: 400px; overflow-y: auto;">
                     <p class="description">Results will appear here...</p>
                 </div>
             </div>
@@ -403,10 +405,10 @@ function gj_ai_takeaway_settings_page() {
                 <p class="description">Test how the AI responds with your current settings and prompt.</p>
                 <div style="display:flex; gap:10px; margin-bottom:15px;">
                     <input type="number" id="test_post_id" placeholder="Post ID" class="small-text">
-                    <button type="button" id="gj_test_ai_btn" class="button">Raw Response Test</button>
-                    <button type="button" id="gj_preview_ui_btn" class="button button-primary">Visual UI Preview</button>
+                    <button type="button" id="sff_test_ai_btn" class="button">Raw Response Test</button>
+                    <button type="button" id="sff_preview_ui_btn" class="button button-primary">Visual UI Preview</button>
                 </div>
-                <div id="gj_test_results" style="max-height: 600px; overflow-y: auto;">
+                <div id="sff_test_results" style="max-height: 600px; overflow-y: auto;">
                     <p class="description">Preview will appear here...</p>
                 </div>
             </div>
@@ -454,15 +456,15 @@ function gj_ai_takeaway_settings_page() {
         });
 
         // --- Context Explorer (MetaBox style) ---
-        $('#gj_explore_meta_btn').on('click', function() {
+        $('#sff_explore_meta_btn').on('click', function() {
             var postId = $('#explore_post_id').val();
             if(!postId) return;
-            $('#gj_explore_results').html('<p>Exploring context...</p>');
+            $('#sff_explore_results').html('<p>Exploring context...</p>');
             
             $.post(ajaxurl, {
-                action: 'gj_ai_explore_meta',
+                action: 'sff_ai_explore_meta',
                 post_id: postId,
-                nonce: '<?php echo wp_create_nonce("gj_ai_test_nonce"); ?>'
+                nonce: '<?php echo wp_create_nonce("sff_ai_test_nonce"); ?>'
             }, function(response) {
                 if(response.success) {
                     var data = response.data;
@@ -486,24 +488,24 @@ function gj_ai_takeaway_settings_page() {
                     });
                     html += `</ul>`;
 
-                    $('#gj_explore_results').html(html);
+                    $('#sff_explore_results').html(html);
                 } else {
-                    $('#gj_explore_results').html('<p style="color:red;">Error: '+response.data+'</p>');
+                    $('#sff_explore_results').html('<p style="color:red;">Error: '+response.data+'</p>');
                 }
             });
         });
 
         // --- Tester ---
-        $('#gj_test_ai_btn').on('click', function() {
+        $('#sff_test_ai_btn').on('click', function() {
             var postId = $('#test_post_id').val();
             if(!postId) { alert('Please enter a Post ID'); return; }
             
-            $('#gj_test_results').html('<p>Generating preview...</p>');
+            $('#sff_test_results').html('<p>Generating preview...</p>');
             
             $.post(ajaxurl, {
-                action: 'gj_ai_test_context',
+                action: 'sff_ai_test_context',
                 post_id: postId,
-                nonce: '<?php echo wp_create_nonce("gj_ai_test_nonce"); ?>'
+                nonce: '<?php echo wp_create_nonce("sff_ai_test_nonce"); ?>'
             }, function(response) {
                 if(response.success) {
                     var html = `<div style="padding:10px; background:#e1f0ff; border-left:4px solid #0073aa; margin-bottom:15px;">
@@ -521,48 +523,48 @@ function gj_ai_takeaway_settings_page() {
                         <div style="margin-top:10px;">${response.data.ai_response}</div>
                     </div>`;
 
-                    $('#gj_test_results').html(html);
+                    $('#sff_test_results').html(html);
                 } else {
-                    $('#gj_test_results').html('<p style="color:red;">Error: ' + response.data + '</p>');
+                    $('#sff_test_results').html('<p style="color:red;">Error: ' + response.data + '</p>');
                 }
             });
         });
 
         // --- Visual UI Preview ---
-        $('#gj_preview_ui_btn').on('click', function() {
+        $('#sff_preview_ui_btn').on('click', function() {
             var postId = $('#test_post_id').val();
             if(!postId) { alert('Please enter a Post ID'); return; }
             
-            $('#gj_test_results').html('<p style="padding:10px; background:#fff3cd; border-left:4px solid #ffc107;">Loading Chatbot UI...</p>');
+            $('#sff_test_results').html('<p style="padding:10px; background:#fff3cd; border-left:4px solid #ffc107;">Loading Chatbot UI...</p>');
             
             $.post(ajaxurl, {
-                action: 'gj_ai_get_shortcode_preview',
+                action: 'sff_ai_get_shortcode_preview',
                 post_id: postId,
-                nonce: '<?php echo wp_create_nonce("gj_ai_test_nonce"); ?>'
+                nonce: '<?php echo wp_create_nonce("sff_ai_test_nonce"); ?>'
             }, function(response) {
                 if (response === '-1' || response === '0') {
-                    $('#gj_test_results').html('<p style="color:red;">Error: Security check failed (Invalid Nonce). Please refresh the page.</p>');
+                    $('#sff_test_results').html('<p style="color:red;">Error: Security check failed (Invalid Nonce). Please refresh the page.</p>');
                     return;
                 }
                 
-                $('#gj_test_results').html(response);
+                $('#sff_test_results').html(response);
                 
                 // Re-initialize the chatbot script for the newly loaded HTML
                 // We retry a few times to ensure the script in the response has been executed
                 var retries = 0;
                 var initCheck = setInterval(function() {
-                    if (typeof window.gj_ai_init_chatbot === 'function') {
+                    if (typeof window.sff_ai_init_chatbot === 'function') {
                         clearInterval(initCheck);
-                        var sessId = 'gj_admin_test_' + Date.now();
-                        window.gj_ai_init_chatbot(postId, sessId, ajaxurl);
+                        var sessId = 'sff_admin_test_' + Date.now();
+                        window.sff_ai_init_chatbot(postId, sessId, ajaxurl);
                     } else if (retries > 20) {
                         clearInterval(initCheck);
-                        console.error('gj_ai_init_chatbot function not found after 2 seconds.');
+                        console.error('sff_ai_init_chatbot function not found after 2 seconds.');
                     }
                     retries++;
                 }, 100);
             }).fail(function(xhr, status, error) {
-                $('#gj_test_results').html('<p style="color:red;">AJAX Error: ' + error + '</p>');
+                $('#sff_test_results').html('<p style="color:red;">AJAX Error: ' + error + '</p>');
             });
         });
 
@@ -570,3 +572,4 @@ function gj_ai_takeaway_settings_page() {
     </script>
     <?php
 }
+
