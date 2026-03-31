@@ -356,6 +356,8 @@ function gj_ai_test_context_handler() {
     
     if ( empty( $context ) ) wp_send_json_error( 'Post not found' );
 
+    $settings = get_option( 'gj_ai_takeaway_settings', array() );
+
     // Determine which model to use
     $is_logged_in = is_user_logged_in();
     $default_model = $settings['model'] ?? 'google/gemini-2.0-flash-001';
@@ -438,7 +440,12 @@ function gj_ai_get_shortcode_preview_handler() {
     $post_id = intval( $_POST['post_id'] );
     if ( ! $post_id ) wp_send_json_error( 'Invalid Post ID' );
 
-    echo do_shortcode( '[ai_takeaway post_id="' . $post_id . '"]' );
+    header('Content-Type: text/html');
+    if (function_exists('gj_ai_takeaway_shortcode')) {
+        echo gj_ai_takeaway_shortcode( array( 'post_id' => $post_id ) );
+    } else {
+        echo "Error: Shortcode function not found.";
+    }
     wp_die();
 }
 

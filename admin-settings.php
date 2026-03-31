@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Register Hooks
 add_action( 'admin_menu', 'gj_ai_takeaway_menu' );
-add_action( 'add_meta_boxes', 'gj_ai_add_preview_metabox' );
+// add_action( 'add_meta_boxes', 'gj_ai_add_preview_metabox' );
 
 function gj_ai_takeaway_menu() {
     $icon_svg = 'data:image/svg+xml;base64,' . base64_encode('<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 2C5.58 2 2 5.58 2 10C2 14.42 5.58 18 10 18C14.42 18 18 14.42 18 10C18 5.58 14.42 2 10 2ZM10 16C6.69 16 4 13.31 4 10C4 6.69 6.69 4 10 4C13.31 4 16 6.69 16 10C16 13.31 13.31 16 10 16Z" fill="white"/><path d="M10 6C7.79 6 6 7.79 6 10C6 12.21 7.79 14 10 14C12.21 14 14 12.21 14 10C14 7.79 12.21 6 10 6ZM10 12C8.9 12 8 11.1 8 10C8 8.9 8.9 8 10 8C11.1 8 12 8.9 12 10C12 11.1 11.1 12 10 12Z" fill="white"/><path d="M10 9C9.45 9 9 9.45 9 10C9 10.55 9.45 11 10 11C10.55 11 11 10.55 11 10C11 9.45 10.55 9 10 9Z" fill="white"/></svg>');
@@ -25,8 +25,8 @@ function gj_ai_takeaway_menu() {
     );
 }
 
-// Add Metabox to Posts/Pages
-add_action( 'add_meta_boxes', 'gj_ai_add_preview_metabox' );
+// Metabox logic ends
+// add_action( 'add_meta_boxes', 'gj_ai_add_preview_metabox' ); // Removed duplicate
 
 function gj_ai_add_preview_metabox() {
     $post_types = get_post_types( array( 'public' => true ), 'names' );
@@ -135,7 +135,117 @@ function gj_ai_takeaway_settings_page() {
     ?>
     <div class="wrap">
         <h1>GJ AI Takeaway Settings</h1>
-        <script>window.gj_is_admin = true;</script>
+        <script>
+        window.gj_is_admin = true;
+        // Global definition for admin preview
+        window.gj_ai_init_chatbot = function(postId, chatSessionId, ajaxUrl) {
+            var $ = jQuery;
+            console.log('Initializing GJ AI Chatbot for Post ID:', postId);
+            
+            var $chatInput = $('#gj_ai_chat_input_' + postId);
+            var $chatSend = $('#gj_ai_chat_send_' + postId);
+            var $chatArea = $('#gj_ai_chat_area_' + postId);
+
+            if ($chatArea.length === 0) {
+                console.warn('GJ AI Chatbot Area not found for Post ID:', postId);
+                return;
+            }
+
+            function addMessage(text, side) {
+                var $msg = $('<div class="gj-ai-msg"></div>').addClass(side === 'user' ? 'gj-ai-msg-sent' : 'gj-ai-msg-received').text(text);
+                $chatArea.append($msg);
+                $chatArea.scrollTop($chatArea[0].scrollHeight);
+                return $msg;
+            }
+
+            function addLoading() {
+                var $loader = $('<div class="gj-ai-msg gj-ai-msg-received gj-ai-loading-dots"><span>.</span><span>.</span><span>.</span></div>');
+                $chatArea.append($loader);
+                $chatArea.scrollTop($chatArea[0].scrollHeight);
+                return $loader;
+            }
+
+            function sendMessage() {
+                var message = $chatInput.val().trim();
+                if (!message) return;
+
+                addMessage(message, 'user');
+                $chatInput.val('');
+                var $loading = addLoading();
+
+                $chatInput.prop('disabled', true);
+                $chatSend.prop('disabled', true);
+
+                $.post(ajaxUrl, {
+                    action: 'gj_ai_chat',
+                    post_id: postId,
+                    message: message,
+                    chat_session_id: chatSessionId
+                }, function(response) {
+                    $loading.remove();
+                    $chatInput.prop('disabled', false);
+                    $chatSend.prop('disabled', false);
+                    $chatInput.focus();
+
+                    if (response.success) {
+                        addMessage(response.data, 'bot');
+                    } else {
+                        var errorMsg = response.data && response.data.message ? response.data.message : 'Sorry, something went wrong.';
+                        addMessage(errorMsg, 'bot');
+                    }
+                }).fail(function() {
+                    $loading.remove();
+                    $chatInput.prop('disabled', false);
+                    $chatSend.prop('disabled', false);
+                    addMessage('Network error.', 'bot');
+                });
+            }
+
+            $chatSend.off('click').on('click', sendMessage);
+            $chatInput.off('keypress').on('keypress', function(e) {
+                if (e.key === 'Enter') sendMessage();
+            });
+
+            // --- Typing Animation ---
+            var $container = $chatArea.closest('.gj-ai-takeaway-container');
+            var $contentEl = $container.find('.gj-ai-takeaway-content');
+            
+            if ($contentEl.length && !$contentEl.data('typing-started')) {
+                $contentEl.data('typing-started', true);
+                var fullText = $contentEl.attr('data-text') || "";
+                var charIndex = 0;
+                var typingSpeed = 10;
+
+                function gjStartTyping() {
+                    if (charIndex < fullText.length) {
+                        $contentEl.append(fullText.charAt(charIndex));
+                        charIndex++;
+                        setTimeout(gjStartTyping, typingSpeed);
+                    } else {
+                        $contentEl.addClass('typing-done');
+                        $chatInput.prop('disabled', false);
+                        $chatSend.prop('disabled', false);
+                    }
+                }
+
+                if ('IntersectionObserver' in window && !window.gj_is_admin) {
+                    var observer = new IntersectionObserver(function(entries) {
+                        if (entries[0].isIntersecting) {
+                            gjStartTyping();
+                            observer.disconnect();
+                        }
+                    }, { threshold: 0.2 });
+                    observer.observe($contentEl[0]);
+                } else {
+                    gjStartTyping();
+                }
+            } else if ($contentEl.hasClass('typing-done')) {
+                // Already typed out elements should be enabled
+                $chatInput.prop('disabled', false);
+                $chatSend.prop('disabled', false);
+            }
+        };
+        </script>
         <form method="post" action="">
             <?php wp_nonce_field( 'gj_ai_settings_nonce' ); ?>
             
@@ -161,8 +271,6 @@ function gj_ai_takeaway_settings_page() {
                     <th scope="row"><label for="model_guest">Model for Non-login User</label></th>
                     <td><input name="model_guest" type="text" id="model_guest" value="<?php echo esc_attr( $model_guest ); ?>" class="regular-text"></td>
                 </tr>
-            </table>
-
             </table>
 
 
@@ -322,6 +430,7 @@ function gj_ai_takeaway_settings_page() {
                         <option value="text">Text / Content</option>
                         <option value="file_id">File (Attachment ID)</option>
                         <option value="file_url">File (URL)</option>
+                        <option value="file_binary">File (Binary/Attachment)</option>
                     </select>
                 </td>
                 <td><button type="button" class="button remove-row">Remove</button></td>
@@ -427,20 +536,36 @@ function gj_ai_takeaway_settings_page() {
             var postId = $('#test_post_id').val();
             if(!postId) { alert('Please enter a Post ID'); return; }
             
-            $('#gj_test_results').html('<p>Loading Chatbot UI...</p>');
+            $('#gj_test_results').html('<p style="padding:10px; background:#fff3cd; border-left:4px solid #ffc107;">Loading Chatbot UI...</p>');
             
             $.post(ajaxurl, {
                 action: 'gj_ai_get_shortcode_preview',
                 post_id: postId,
                 nonce: '<?php echo wp_create_nonce("gj_ai_test_nonce"); ?>'
             }, function(response) {
+                if (response === '-1' || response === '0') {
+                    $('#gj_test_results').html('<p style="color:red;">Error: Security check failed (Invalid Nonce). Please refresh the page.</p>');
+                    return;
+                }
+                
                 $('#gj_test_results').html(response);
                 
                 // Re-initialize the chatbot script for the newly loaded HTML
-                if (typeof window.gj_ai_init_chatbot === 'function') {
-                    var sessId = 'gj_admin_test_' + Date.now();
-                    window.gj_ai_init_chatbot(postId, sessId, ajaxurl);
-                }
+                // We retry a few times to ensure the script in the response has been executed
+                var retries = 0;
+                var initCheck = setInterval(function() {
+                    if (typeof window.gj_ai_init_chatbot === 'function') {
+                        clearInterval(initCheck);
+                        var sessId = 'gj_admin_test_' + Date.now();
+                        window.gj_ai_init_chatbot(postId, sessId, ajaxurl);
+                    } else if (retries > 20) {
+                        clearInterval(initCheck);
+                        console.error('gj_ai_init_chatbot function not found after 2 seconds.');
+                    }
+                    retries++;
+                }, 100);
+            }).fail(function(xhr, status, error) {
+                $('#gj_test_results').html('<p style="color:red;">AJAX Error: ' + error + '</p>');
             });
         });
 
